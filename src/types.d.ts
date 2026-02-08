@@ -63,6 +63,7 @@ type CCCGameUpdate = {
         live: boolean
         opening: string
         pgn: string
+        termination?: string
     }
 }
 
