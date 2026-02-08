@@ -10,7 +10,7 @@
   overflow: hidden;
 
   display: grid;
-  grid-template-columns: 1fr calc(var(--standings-width) - 2rem);
+  grid-template-columns: 1fr calc(var(--standings-width) - 3rem);
   gap: 1rem;
 }
 
@@ -21,12 +21,12 @@
 .board {
   width: var(--board-size);
   height: var(--board-size);
-  margin-top: 4px;
 }
 
 .standingsEntry {
   display: grid;
   grid-template-columns: 2rem 1fr 13rem 3rem;
+  padding-right: 1px;
 }
 
 .standingsScore {
@@ -40,16 +40,16 @@
   gap: 8px;
 }
 
-.engine-name {
+.engineName {
   min-width: 60px;
   font-weight: bold;
 }
 
-.engine-eval {
+.engineEval {
   min-width: 60px;
 }
 
-.engine-field {
+.engineField {
   min-width: 90px;
   text-align: left;
   white-space: nowrap;

@@ -3,9 +3,11 @@ import { Chess, Move, type Square } from 'chess.js'
 import { useEffect, useRef, useState } from 'react'
 import { CCCWebSocket } from './websocket'
 import type { Api } from '@lichess-org/chessground/api'
-import type { CCCLiveInfo, CCCEngine, CCCMessage, CCCEventUpdate } from './types'
+import type { CCCLiveInfo, CCCEngine, CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import './App.css'
+
+const CLOCK_UPDATE_MS = 25
 
 function App() {
 
@@ -16,23 +18,22 @@ function App() {
     const game = useRef(new Chess())
     const ws = useRef(new CCCWebSocket("wss://ccc-api.gcp-prod.chess.com/ws"))
 
+    const [_, setCccEventList] = useState<CCCEventsListUpdate>()
     const [cccEvent, setCccEvent] = useState<CCCEventUpdate>()
     const [white, setWhite] = useState<CCCEngine>()
     const [black, setBlack] = useState<CCCEngine>()
+    const [clocks, setClocks] = useState<CCCClocks>()
 
     const [liveInfoWhite, setLiveInfoWhite] = useState<CCCLiveInfo>()
     const [liveInfoBlack, setLiveInfoBlack] = useState<CCCLiveInfo>()
 
-    function getArrows() {
+    function updateBoard(lastMove: [Square, Square]) {
         const arrows: DrawShape[] = []
         if (whiteArrow.current)
             arrows.push(whiteArrow.current[0])
         if (blackArrow.current)
             arrows.push(blackArrow.current[0])
-        return arrows;
-    }
 
-    function updateBoard(lastMove: [Square, Square]) {
         boardRef.current?.set({
             fen: game.current.fen(),
             lastMove: lastMove,
@@ -54,7 +55,27 @@ function App() {
                 },
                 enabled: false,
                 eraseOnMovablePieceClick: false,
-                shapes: getArrows()
+                shapes: arrows,
+            }
+        })
+    }
+
+    function updateClocks() {
+        setClocks(currentClock => {
+            if (!currentClock) return currentClock
+
+            let wtime = Number(currentClock.wtime)
+            let btime = Number(currentClock.btime)
+
+            if (game.current.turn() == "w")
+                wtime -= CLOCK_UPDATE_MS
+            else
+                btime -= CLOCK_UPDATE_MS
+
+            return {
+                ...currentClock,
+                wtime: String(wtime),
+                btime: String(btime),
             }
         })
     }
@@ -104,11 +125,11 @@ function App() {
                 break;
 
             case "eventsListUpdate":
-
+                setCccEventList(msg)
                 break;
 
             case "clocks":
-
+                setClocks(msg)
                 break;
 
             case "newMove":
@@ -140,9 +161,13 @@ function App() {
         })
 
         ws.current.connect(handleMessage)
-
-        return () => ws.current.disconnect();
+        return () => ws.current.disconnect()
     }, [boardElementRef.current])
+
+    useEffect(() => {
+        const clockTimer = setInterval(updateClocks, CLOCK_UPDATE_MS)
+        return () => clearInterval(clockTimer)
+    }, [])
 
     const sortedEngines = cccEvent?.tournamentDetails.engines.sort((a, b) => Number(b.points) - Number(a.points)) ?? []
 
@@ -150,11 +175,11 @@ function App() {
         <div className="app">
 
             <div className="boardWindow">
-                {liveInfoBlack && black && <EngineComponent info={liveInfoBlack} engine={black} />}
+                {liveInfoBlack && black && clocks && <EngineComponent info={liveInfoBlack} engine={black} time={Number(clocks.btime)} />}
 
                 <div ref={boardElementRef} className="board"></div>
 
-                {liveInfoWhite && white && <EngineComponent info={liveInfoWhite} engine={white} />}
+                {liveInfoWhite && white && clocks && <EngineComponent info={liveInfoWhite} engine={white} time={Number(clocks.wtime)} />}
             </div>
 
             <div className="standingsWindow">
@@ -181,17 +206,25 @@ function App() {
 type EngineComponentProps = {
     info: CCCLiveInfo
     engine: CCCEngine
+    time: number
 }
 
-function EngineComponent({ engine, info }: EngineComponentProps) {
+function EngineComponent({ engine, info, time }: EngineComponentProps) {
+
+    const hundreds = String(Math.floor(time / 10) % 100).padStart(2, "0");
+    const seconds = String(Math.floor(time / 1000) % 60).padStart(2, "0");
+    const minutes = String(Math.floor(time / (1000 * 60)) % 60).padStart(2, "0");
+    const timeString = `${minutes}:${seconds}.${hundreds}`
+
     return (
         <div className="engine">
             <img src={"https://images.chesscomfiles.com/chess-themes/computer_chess_championship/avatars/" + engine.imageUrl + ".png"} />
-            <span className="engine-name">{engine.name}</span>
-            <span className="engine-eval">{info.info.score}</span>
-            <span className="engine-field"> D: <span>{info.info.depth} / {info.info.seldepth}</span></span>
-            <span className="engine-field"> N: <span>{info.info.nodes}</span></span>
-            <span className="engine-field"> NPS: <span>{info.info.speed}</span></span>
+            <span className="engineName">{engine.name}</span>
+            <span className="engineEval">{info.info.score}</span>
+            <span className="engineField"> D: <span>{info.info.depth} / {info.info.seldepth}</span></span>
+            <span className="engineField"> N: <span>{info.info.nodes}</span></span>
+            <span className="engineField"> NPS: <span>{info.info.speed}</span></span>
+            <span className="engineField"> T: <span>{timeString}</span></span>
         </div>
     )
 }
