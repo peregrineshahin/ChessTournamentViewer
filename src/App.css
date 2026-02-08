@@ -1,7 +1,7 @@
 :root {
-  --board-size: min(calc(100vh - 12rem), calc(100vw - var(--standings-width)));
-  --standings-width: 30rem;
-  --schedule-width: 30rem;
+  --board-size: min(calc(100vh - 8rem), calc(100vw - var(--standings-width)));
+  --standings-width: 28rem;
+  --schedule-width: 28rem;
 }
 
 .app {
