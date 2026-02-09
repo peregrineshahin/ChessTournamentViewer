@@ -3,7 +3,7 @@ import { Chess, Move, type Square } from 'chess.js'
 import { useEffect, useRef, useState } from 'react'
 import { CCCWebSocket } from './websocket'
 import type { Api } from '@lichess-org/chessground/api'
-import type { CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks, CCCGame } from './types'
+import type { CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js'
 import { EngineComponent } from './components/EngineComponent'
@@ -34,7 +34,7 @@ function App() {
     const [fen, setFen] = useState(game.current.fen())
 
     const [popupOpen, setPopupOpen] = useState(false)
-    const [_, setCccEventList] = useState<CCCEventsListUpdate>()
+    const [cccEventList, setCccEventList] = useState<CCCEventsListUpdate>()
     const [cccEvent, setCccEvent] = useState<CCCEventUpdate>()
     const [clocks, setClocks] = useState<CCCClocks>({ binc: "0", winc: "0", btime: "0", wtime: "0", type: "clocks" })
 
@@ -195,7 +195,7 @@ function App() {
     function requestEvent(gameNr?: string, eventNr?: string) {
         let message: any = { type: "requestEvent" }
         if (gameNr) message["gameNr"] = gameNr
-        if (eventNr) message["enr"] = eventNr
+        if (eventNr) message["eventNr"] = eventNr
 
         ws.current.send(message)
     }
@@ -271,6 +271,16 @@ function App() {
                 <button className="showCrosstable" onClick={() => setPopupOpen(true)}>Show Crosstable</button>
                 <StandingsTable engines={engines} />
                 <GameGraph black={black} white={white} liveInfosBlack={liveInfosBlack} liveInfosWhite={liveInfosWhite} liveInfosStockfish={liveInfosStockfish} />
+
+                <div className="eventListContainer">
+                    <table className="eventList">
+                        <tbody>
+                            {cccEventList?.events.map(event => (
+                                <tr key={event.id} onClick={() => requestEvent(undefined, String(event.id))}><td>{event.name} ({event.tc.init}+{event.tc.incr})</td></tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>}
 
             {cccEvent && <div className="scheduleWindow">

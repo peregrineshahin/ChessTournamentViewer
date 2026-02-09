@@ -48,6 +48,38 @@
   background-color: #8ca2ad;
 }
 
+.standingsWindow {
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .standingsWindow .showCrosstable {
   width: 100%;
+}
+
+.eventListContainer {
+  overflow: auto;
+}
+
+.eventList {
+  background: #2A2A2A;
+  border: 1px solid #121212;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.eventList td {
+  border-bottom: 1px solid #121212;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.eventList tr:nth-child(2n) td {
+  background: #323232;
+}
+
+.eventList td:hover {
+  background: #434343 !important;
 }
