@@ -40,10 +40,14 @@
 .engineField {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.engineField .key {
   color: #A1A1A1;
 }
 
-.engineField span,
+.engineField .value,
 .enginePv,
 .engineEval {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -86,5 +90,30 @@
   .engineInfoTable {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
+  }
+
+  .engineField .key {
+    font-size: 0;
+  }
+
+  .engineField .key::first-letter {
+    font-size: 0.9rem;
+  }
+
+  .engineField .value {
+    margin-left: 1rem;
+  }
+
+  .engineInfoHeader .engineName {
+    display: none;
+  }
+
+  .engineInfoHeader {
+    margin-left: 0;
+  }
+
+  .engineInfoHeader .engineLogo {
+    width: 32px;
+    height: 32px;
   }
 }

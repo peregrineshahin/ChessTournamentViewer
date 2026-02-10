@@ -52,3 +52,18 @@
 .schedule .game .engineName.draw {
   color: #A1A1A1;
 }
+
+@media (max-width: 775px) {
+  .schedule .game {
+    grid-template-columns: 35px 40px 1fr 2rem 1fr 40px;
+  }
+
+  .schedule .game .engineLogo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .schedule .game .round {
+    font-size: 0.75rem;
+  }
+}

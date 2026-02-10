@@ -217,35 +217,47 @@
 
 @media (max-width: 775px) {
   :root {
-    --board-size: calc(100vh - 400px);
+    --board-size: calc(100vw - 2rem);
+    --graph-height: 18rem;
   }
 
   .app {
-    grid-template-rows: 50px var(--board-size) 200px 150px 300px 300px;
+    grid-template-columns: 1fr;
+    grid-template-rows: 50px var(--board-size) 200px var(--graph-height) minmax(auto, 600px) 600px;
+  }
+
+  .topBar {
+    grid-column: 1 / 2;
   }
 
   .engineWindow {
-    grid-column: 1 / 3;
+    grid-column: 1 / 2;
     grid-row: 3 / 4;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: 1fr;
+    gap: 0.5rem;
+  }
+
+  .boardWindow {
+    grid-column: 1 / 2;
   }
 
   .movesWindow {
-    grid-column: 1 / 3;
+    grid-column: 1 / 2;
   }
 
   .standingsWindow {
     grid-row: 5 / 6;
-    grid-column: 1 / 3;
+    grid-column: 1 / 2;
   }
-
+  
   .scheduleWindow {
+    grid-column: 1 / 2;
     grid-row: 6 / 7;
   }
 
   .graphWindow {
-    grid-column: 2 / 3;
-    grid-row: 2 / 3;
+    grid-column: 1 / 2;
+    grid-row: 4 / 5;
   }
 }

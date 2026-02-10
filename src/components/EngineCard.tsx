@@ -42,12 +42,12 @@ export function EngineCard({ engine, info, time }: EngineCardProps) {
             <hr/>
 
             <div className="engineInfoTable">
-                <span className="engineField">Depth <span>{info.info.depth} / {info.info.seldepth ?? "-"}</span></span>
-                <span className="engineField">Nodes <span>{formatLargeNumber(info.info.nodes)}</span></span>
-                <span className="engineField">NPS <span>{formatLargeNumber(info.info.speed)}</span></span>
-                <span className="engineField">Time <span>{formatTime(time)}</span></span>
-                <span className="engineField">TB Hits <span>{info.info.tbhits ?? "-"}</span></span>
-                <span className="engineField">Hashfull <span>{info.info.hashfull ?? "-"}</span></span>
+                <span className="engineField"><span className="key">Depth</span><span className="value">{info.info.depth} / {info.info.seldepth ?? "-"}</span></span>
+                <span className="engineField"><span className="key">Nodes</span><span className="value">{formatLargeNumber(info.info.nodes)}</span></span>
+                <span className="engineField"><span className="key">NPS</span><span className="value">{formatLargeNumber(info.info.speed)}</span></span>
+                <span className="engineField"><span className="key">Time</span><span className="value">{formatTime(time)}</span></span>
+                <span className="engineField"><span className="key">TB Hits</span><span className="value">{info.info.tbhits ?? "-"}</span></span>
+                <span className="engineField"><span className="key">Hashfull</span><span className="value">{info.info.hashfull ?? "-"}</span></span>
             </div>
 
             <hr className="enginePvDivider"/>
