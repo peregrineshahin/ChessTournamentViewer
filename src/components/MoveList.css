@@ -9,3 +9,29 @@
 .moveList span {
   color: #a1a1a1;
 }
+
+.moveList .moveNumber {
+  cursor: default;
+}
+
+.moveList .move {
+  cursor: pointer;
+}
+
+.moveList .move:hover {
+  color: #ddd;
+}
+
+.moveList .currentMove {
+  color: #fff;
+}
+
+.moveButtons {
+  margin-top: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.moveButtons button {
+  flex-grow: 1;
+}

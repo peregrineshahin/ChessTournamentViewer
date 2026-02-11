@@ -1,6 +1,6 @@
 import { Chessground } from "@lichess-org/chessground";
-import { Chess, Move, type Square } from "chess.js";
-import { useEffect, useRef, useState } from "react";
+import { Chess, type Square } from "chess.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CCCWebSocket, type TournamentWebSocket } from "./CCCWebsocket";
 import type { Api } from "@lichess-org/chessground/api";
 import type {
@@ -56,9 +56,6 @@ Chart.register(
 function App() {
   const boardElementRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<Api>(null);
-  const whiteArrow = useRef<[DrawShape, DrawShape]>(null);
-  const blackArrow = useRef<[DrawShape, DrawShape]>(null);
-  const stockfishArrow = useRef<DrawShape>(null);
   const game = useRef(new Chess());
   const ws = useRef<TournamentWebSocket>(new CCCWebSocket());
 
@@ -77,20 +74,61 @@ function App() {
     type: "clocks",
   });
 
-  const [liveInfosWhite, setLiveInfosWhite] = useState<LiveInfoEntry[]>([]);
-  const [liveInfosBlack, setLiveInfosBlack] = useState<LiveInfoEntry[]>([]);
-  const [liveInfosStockfish, setLiveInfosStockfish] = useState<LiveInfoEntry[]>(
-    []
-  );
+  const currentMoveNumber = useRef(-1);
+  const liveInfosRef = useRef({
+    white: [] as LiveInfoEntry[],
+    black: [] as LiveInfoEntry[],
+    stockfish: [] as LiveInfoEntry[],
+  });
 
-  function updateBoard(
-    lastMove: [Square, Square],
-    arrowsOnly: boolean = false
-  ) {
+  const lastBoardUpdateRef = useRef(new Date().getTime());
+
+  function updateBoard() {
+    const currentTime = new Date().getTime();
+    if (currentTime - lastBoardUpdateRef.current <= 50) return;
+
     const arrows: DrawShape[] = [];
-    if (whiteArrow.current) arrows.push(whiteArrow.current[0]);
-    if (blackArrow.current) arrows.push(blackArrow.current[0]);
-    if (stockfishArrow.current) arrows.push(stockfishArrow.current);
+
+    const latestLiveInfoBlack = liveInfosRef.current.black.at(
+      currentMoveNumber.current
+    );
+    const latestLiveInfoWhite = liveInfosRef.current.white.at(
+      currentMoveNumber.current
+    );
+    const latestLiveInfoStockfish = liveInfosRef.current.stockfish.at(
+      currentMoveNumber.current
+    );
+
+    if (latestLiveInfoBlack) {
+      const pv = latestLiveInfoBlack.info.pv.split(" ");
+      const nextMove = game.current.turn() == "b" ? pv[0] : pv[1];
+      if (nextMove && nextMove.length >= 4)
+        arrows.push({
+          orig: (nextMove.slice(0, 2) as Square) || "a1",
+          dest: (nextMove.slice(2, 4) as Square) || "a1",
+          brush: latestLiveInfoBlack.info.color,
+        });
+    }
+    if (latestLiveInfoWhite) {
+      const pv = latestLiveInfoWhite.info.pv.split(" ");
+      const nextMove = game.current.turn() == "w" ? pv[0] : pv[1];
+      if (nextMove && nextMove.length >= 4)
+        arrows.push({
+          orig: (nextMove.slice(0, 2) as Square) || "a1",
+          dest: (nextMove.slice(2, 4) as Square) || "a1",
+          brush: latestLiveInfoWhite.info.color,
+        });
+    }
+    if (latestLiveInfoStockfish) {
+      const pv = latestLiveInfoStockfish.info.pv.split(" ");
+      const nextMove = pv[0];
+      if (nextMove && nextMove.length >= 4)
+        arrows.push({
+          orig: (nextMove.slice(0, 2) as Square) || "a1",
+          dest: (nextMove.slice(2, 4) as Square) || "a1",
+          brush: "stockfish",
+        });
+    }
 
     let config: Config = {
       drawable: {
@@ -111,13 +149,24 @@ function App() {
       },
     };
 
-    if (!arrowsOnly) {
-      config.fen = game.current.fen();
-      config.lastMove = lastMove;
+    const history = game.current.history({ verbose: true });
+
+    config.fen = game.current.fen();
+    if (currentMoveNumber.current !== -1) {
+      const gameCopy = new Chess();
+      for (let i = 0; i < currentMoveNumber.current; i++)
+        gameCopy.move(history[i]);
+      config.fen = gameCopy.fen();
     }
 
-    setFen(game.current.fen());
+    const lastMove =
+      currentMoveNumber.current === -1
+        ? history.at(-1)
+        : history.at(currentMoveNumber.current - 1);
+    if (lastMove) config.lastMove = [lastMove.from, lastMove.to];
+
     boardRef.current?.set(config);
+    lastBoardUpdateRef.current = new Date().getTime();
   }
 
   function updateClocks() {
@@ -136,29 +185,23 @@ function App() {
   }
 
   function handleMessage(msg: CCCMessage) {
-    let lastMove: Move;
-
     switch (msg.type) {
       case "eventUpdate":
         setCccEvent(msg);
         break;
 
       case "gameUpdate":
-        whiteArrow.current = null;
-        blackArrow.current = null;
-        stockfishArrow.current = null;
-
         setCccGame(msg);
 
         game.current.loadPgn(msg.gameDetails.pgn);
-        lastMove = game.current.history({ verbose: true }).at(-1)!!;
-        updateBoard([lastMove.from, lastMove.to]);
+        setFen(game.current.fen());
+        updateBoard();
 
         const { liveInfosBlack, liveInfosWhite } = extractLiveInfoFromGame(
           game.current
         );
-        setLiveInfosWhite(liveInfosWhite);
-        setLiveInfosBlack(liveInfosBlack);
+        liveInfosRef.current.white = liveInfosWhite;
+        liveInfosRef.current.black = liveInfosBlack;
 
         const liveInfosStockfish: LiveInfoEntry[] = [];
         const localStorageID = msg.gameDetails.gameNr + "|";
@@ -170,48 +213,22 @@ function App() {
           const data = localStorage.getItem(localStorageID + i);
           if (data) liveInfosStockfish[i] = JSON.parse(data);
         }
-        setLiveInfosStockfish(liveInfosStockfish);
+        liveInfosRef.current.stockfish = liveInfosStockfish;
 
         break;
 
       case "liveInfo":
-        const pv = msg.info.pv.split(" ");
-        const nextMove = pv[0];
-        const secondNextMove = pv.length > 1 ? pv[1] : pv[0];
-        const arrow: [DrawShape, DrawShape] | null =
-          nextMove.length >= 4 && secondNextMove.length >= 4
-            ? [
-                {
-                  orig: (nextMove.slice(0, 2) as Square) || "a1",
-                  dest: (nextMove.slice(2, 4) as Square) || "a1",
-                  brush: msg.info.color,
-                },
-                {
-                  orig: (secondNextMove.slice(0, 2) as Square) || "a1",
-                  dest: (secondNextMove.slice(2, 4) as Square) || "a1",
-                  brush: msg.info.color,
-                },
-              ]
-            : null;
-
         if (msg.info.color == "white") {
-          setLiveInfosWhite((data) => {
-            const newData = [...data];
-            newData[msg.info.ply] = msg;
-            return newData;
-          });
-          whiteArrow.current = arrow;
+          const newLiveInfos = [...liveInfosRef.current.white];
+          newLiveInfos[msg.info.ply] = msg;
+          liveInfosRef.current.white = newLiveInfos;
         } else {
-          setLiveInfosBlack((data) => {
-            const newData = [...data];
-            newData[msg.info.ply] = msg;
-            return newData;
-          });
-          blackArrow.current = arrow;
+          const newLiveInfos = [...liveInfosRef.current.black];
+          newLiveInfos[msg.info.ply] = msg;
+          liveInfosRef.current.black = newLiveInfos;
         }
 
-        lastMove = game.current.history({ verbose: true }).at(-1)!!;
-        updateBoard([lastMove.from, lastMove.to], true);
+        updateBoard();
 
         break;
 
@@ -228,26 +245,29 @@ function App() {
         const to = msg.move.slice(2, 4) as Square;
         const promo = msg.move?.[4];
 
-        if (game.current.turn() == "w" && whiteArrow.current) {
-          whiteArrow.current = [whiteArrow.current[1], whiteArrow.current[0]];
-        } else if (blackArrow.current) {
-          blackArrow.current = [blackArrow.current[1], blackArrow.current[0]];
-        }
-
         game.current.move({ from, to, promotion: promo as any });
-        updateBoard([from, to]);
+        setFen(game.current.fen());
+        updateBoard();
 
         break;
     }
   }
 
-  function requestEvent(gameNr?: string, eventNr?: string) {
+  const requestEvent = useCallback((gameNr?: string, eventNr?: string) => {
     let message: any = { type: "requestEvent" };
     if (gameNr) message["gameNr"] = gameNr;
     if (eventNr) message["eventNr"] = eventNr;
 
     ws.current.send(message);
-  }
+  }, []);
+
+  const setCurrentMoveNumber = useCallback(
+    (moveNumber: number) => {
+      currentMoveNumber.current = moveNumber;
+      updateBoard();
+    },
+    [game.current.moves().length]
+  ); // required for MoveList to re-render correctly
 
   useEffect(() => {
     if (boardRef.current || !boardElementRef.current) return;
@@ -281,8 +301,7 @@ function App() {
       if (game.current.getHeaders()["Event"] === "?") return;
       if (game.current.fen() != result.fen) return;
 
-      stockfishArrow.current = result.arrow;
-      updateBoard(["a1", "a1"], true);
+      updateBoard();
 
       if (cccEvent && cccGame)
         localStorage.setItem(
@@ -290,23 +309,26 @@ function App() {
           JSON.stringify(result.liveInfo)
         );
 
-      setLiveInfosStockfish((data) => {
-        const newData = [...data];
-        newData[result.liveInfo.info.ply] = result.liveInfo;
-        return newData;
-      });
+      const newLiveInfos = [...liveInfosRef.current.stockfish];
+      newLiveInfos[result.liveInfo.info.ply] = result.liveInfo;
+      liveInfosRef.current.stockfish = newLiveInfos;
     };
     stockfish.current.analyze(fen);
   }, [fen]);
 
-  const latestLiveInfoBlack = liveInfosBlack.at(-1) ?? emptyLiveInfo();
-  const latestLiveInfoWhite = liveInfosWhite.at(-1) ?? emptyLiveInfo();
-  const latestLiveInfoStockfish = liveInfosStockfish.at(-1) ?? emptyLiveInfo();
+  const latestLiveInfoBlack =
+    liveInfosRef.current.black.at(-1) ?? emptyLiveInfo();
+  const latestLiveInfoWhite =
+    liveInfosRef.current.white.at(-1) ?? emptyLiveInfo();
+  const latestLiveInfoStockfish =
+    liveInfosRef.current.stockfish.at(-1) ?? emptyLiveInfo();
 
-  const engines =
-    (cccEvent?.tournamentDetails.engines ?? []).sort(
+  const engines = useMemo(() => {
+    if (!cccEvent?.tournamentDetails?.engines) return [];
+    return [...cccEvent.tournamentDetails.engines].sort(
       (a, b) => Number(b.points) - Number(a.points)
-    ) ?? [];
+    );
+  }, [cccEvent]);
   const white = engines.find(
     (engine) => engine.name === game.current.getHeaders()["White"]
   );
@@ -371,7 +393,11 @@ function App() {
         <h4>Move List</h4>
 
         {cccGame ? (
-          <MoveList game={game.current} />
+          <MoveList
+            game={game.current}
+            currentMoveNumber={currentMoveNumber.current}
+            setCurrentMoveNumber={setCurrentMoveNumber}
+          />
         ) : (
           <div className="sectionSpinner">
             <Spinner />
@@ -398,9 +424,9 @@ function App() {
           <GameGraph
             black={black}
             white={white}
-            liveInfosBlack={liveInfosBlack}
-            liveInfosWhite={liveInfosWhite}
-            liveInfosStockfish={liveInfosStockfish}
+            liveInfosBlack={liveInfosRef.current.black}
+            liveInfosWhite={liveInfosRef.current.white}
+            liveInfosStockfish={liveInfosRef.current.stockfish}
           />
         ) : (
           <>
