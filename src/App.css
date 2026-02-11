@@ -61,14 +61,20 @@
   font-weight: bold;
 }
 
+.app:has(.popup),
+body:has(.popup) {
+  overflow: hidden;
+}
+
 .popup {
-  position: absolute;
+  position: fixed;
   background: #2a2a2aee;
+  top: 0;
+  left: 0;
   width: calc(100vw - 2rem);
   height: calc(100vh - 2rem);
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  margin: 1rem;
+
   z-index: 100;
   overflow: auto;
   border-radius: 8px;
@@ -148,9 +154,9 @@
 
   .app {
     grid-template-columns: var(--board-size) 1fr;
-    grid-template-rows: 50px var(--board-size) calc(
-        var(--graph-height) - 6rem
-      ) 300px;
+    grid-template-rows:
+      50px var(--board-size) calc(var(--graph-height) - 6rem)
+      300px;
     height: auto;
     overflow-y: auto;
   }
@@ -192,9 +198,9 @@
 
   .app {
     grid-template-columns: var(--board-size) 1fr;
-    grid-template-rows: 50px var(--board-size) calc(
-        var(--graph-height) - 6rem
-      ) 300px 300px;
+    grid-template-rows:
+      50px var(--board-size) calc(var(--graph-height) - 6rem)
+      300px 300px;
     height: auto;
     overflow-y: auto;
   }
@@ -234,10 +240,9 @@
 
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: 50px var(--board-size) 200px var(--graph-height) minmax(
-        auto,
-        600px
-      ) 600px;
+    grid-template-rows:
+      50px var(--board-size) 200px var(--graph-height) minmax(auto, 600px)
+      600px;
   }
 
   .topBar {

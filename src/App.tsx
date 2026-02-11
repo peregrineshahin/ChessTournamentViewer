@@ -259,8 +259,8 @@ function App() {
       selectable: { enabled: false },
     });
 
+    ws.current.disconnect();
     ws.current.connect(handleMessage);
-    // return () => ws.current.disconnect()
   }, [boardElementRef.current]);
 
   useEffect(() => {
