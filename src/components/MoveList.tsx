@@ -15,7 +15,6 @@ const MoveList = memo(
 
     useEffect(() => {
       if (!moveListRef.current) return;
-
       moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
     }, [moveListRef.current, moves.length]);
 
@@ -56,35 +55,57 @@ const MoveList = memo(
       };
 
       window.addEventListener("keydown", handleKeyDown);
-
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [currentMoveNumber, moves.length]);
 
     return (
       <>
         <div className="moveList" ref={moveListRef}>
-          {moves.map((move, i) => {
-            const moveClass =
-              i === currentMoveNumber ||
-              (currentMoveNumber === -1 && i === moves.length - 1)
-                ? " currentMove"
-                : "";
-            return (
-              <Fragment key={i}>
-                {i % 2 == 0 ? (
-                  <span className={"moveNumber" + moveClass}>
-                    {i / 2 + 1}.{" "}
-                  </span>
-                ) : null}
-                <span
-                  className={"move" + moveClass}
-                  onClick={() => setCurrentMoveNumber(i)}
-                >
-                  {move}
-                </span>
-              </Fragment>
-            );
-          })}
+          <table className="moveTable">
+            <tbody>
+              {moves.map((move, i) => {
+                const moveClass =
+                  i === currentMoveNumber ||
+                  (currentMoveNumber === -1 && i === moves.length - 1)
+                    ? " currentMove"
+                    : "";
+
+                // Only render row on white moves (even index)
+                if (i % 2 === 0) {
+                  return (
+                    <tr key={i}>
+                      <td
+                        className={"move" + moveClass}
+                        onClick={() => setCurrentMoveNumber(i)}
+                      >
+                        {i / 2 + 1}. {move}
+                      </td>
+
+                      <td>
+                        {moves[i + 1] ? (
+                          <span
+                            className={
+                              "move" +
+                              (i + 1 === currentMoveNumber ||
+                              (currentMoveNumber === -1 &&
+                                i + 1 === moves.length - 1)
+                                ? " currentMove"
+                                : "")
+                            }
+                            onClick={() => setCurrentMoveNumber(i + 1)}
+                          >
+                            {moves[i + 1]}
+                          </span>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return null;
+              })}
+            </tbody>
+          </table>
         </div>
 
         <div className="moveButtons">

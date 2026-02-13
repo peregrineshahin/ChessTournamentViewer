@@ -1,12 +1,9 @@
 .moveList {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 0.25rem;
   overflow: auto;
-  max-height: 100%;
 }
 
-.moveList span {
+.moveList span,
+.moveList td {
   color: #a1a1a1;
 }
 
@@ -26,6 +23,10 @@
   color: #fff;
 }
 
+.moveList .moveTable {
+  width: 100%;
+}
+
 .moveButtons {
   margin-top: auto;
   display: flex;
@@ -34,4 +35,14 @@
 
 .moveButtons button {
   flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+  .moveList {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.25rem;
+    overflow: auto;
+    max-height: 100%;
+  }
 }

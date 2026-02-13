@@ -423,6 +423,21 @@ function App() {
           className="borderRadiusTop"
         />
         <div ref={boardElementRef} className="board"></div>
+        <div className="movesWindow">
+          <h4>Move List</h4>
+
+          {cccGame ? (
+            <MoveList
+              game={game.current}
+              currentMoveNumber={currentMoveNumber.current}
+              setCurrentMoveNumber={setCurrentMoveNumber}
+            />
+          ) : (
+            <div className="sectionSpinner">
+              <Spinner />
+            </div>
+          )}
+        </div>
         <EngineMinimal
           engine={white}
           info={liveInfoWhite}
@@ -430,22 +445,6 @@ function App() {
           placeholder={"white"}
           className="borderRadiusBottom"
         />
-      </div>
-
-      <div className="movesWindow">
-        <h4>Move List</h4>
-
-        {cccGame ? (
-          <MoveList
-            game={game.current}
-            currentMoveNumber={currentMoveNumber.current}
-            setCurrentMoveNumber={setCurrentMoveNumber}
-          />
-        ) : (
-          <div className="sectionSpinner">
-            <Spinner />
-          </div>
-        )}
       </div>
 
       <div className="standingsWindow">
