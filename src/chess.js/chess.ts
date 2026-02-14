@@ -3798,9 +3798,7 @@ export class Chess960 extends Chess {
     const move = old.move
 
     // For castling moves, we need to handle Chess960 rook positions
-    if (move.flags & (BITS.KSIDE_CASTLE | BITS.QSIDE_CASTLE)) {
-      const us = old.turn
-      
+    if (move.flags & (BITS.KSIDE_CASTLE | BITS.QSIDE_CASTLE)) {      
       // Use the saved rook positions from the move object
       const rookOriginalPos = move.rookFrom ?? -1
       const rookCurrentPos = move.rookTo ?? -1
